@@ -1,8 +1,1 @@
-{
-  "rewrites": [
-    {
-      "source": "/clerk/:path*",
-      "destination": "https://clerk.clerk.accounts.dev/:path*"
-    }
-  ]
-}
+{}
