@@ -2,7 +2,7 @@
 
 ## Verification Status
 
-Your Clerk integration follows the **official Next.js App Router pattern**:
+Your Clerk integration follows the **official Next.js App Router pattern**
 
 ### ✅ Correct Implementation
 
