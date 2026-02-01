@@ -4,7 +4,7 @@
 
 ### ✅ Correct Implementation
 
-1. **Middleware**: Using `clerkMiddleware()` in `proxy.ts` ✅
+1. **Middleware**: Using `clerkMiddleware()` in `proxy.t` ✅
 2. **Layout**: `<ClerkProvider>` wrapping app in `app/layout.tsx` ✅
 3. **Imports**: All from `@clerk/nextjs` or `@clerk/nextjs/server` ✅
 4. **App Router**: Using App Router structure (not pages/) ✅
