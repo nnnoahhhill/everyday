@@ -16,14 +16,8 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const publishableKey = process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY;
-  const clerkDomain = process.env.NEXT_PUBLIC_CLERK_DOMAIN;
-  
   return (
-    <ClerkProvider 
-      {...(publishableKey ? { publishableKey } : {})}
-      {...(clerkDomain ? { domain: clerkDomain } : {})}
-    >
+    <ClerkProvider>
       <html lang="en">
         <body className={inter.className}>
           <QueryProvider>
