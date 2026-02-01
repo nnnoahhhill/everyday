@@ -3,6 +3,8 @@
 import { X } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
+import ColorSettings from "./color-settings";
+import CustomTagsManager from "./custom-tags-manager";
 
 interface SettingsModalProps {
   isOpen: boolean;
@@ -38,7 +40,13 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
         </div>
         
         <div className="p-4 space-y-6">
-          <div>
+          <ColorSettings />
+          
+          <div className="border-t border-black pt-4">
+            <CustomTagsManager />
+          </div>
+          
+          <div className="border-t border-black pt-4">
             <h3 className="text-sm font-bold text-black mb-2">Archived Tasks</h3>
             <button
               onClick={() => setShowArchived(!showArchived)}

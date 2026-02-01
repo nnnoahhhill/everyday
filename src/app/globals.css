@@ -3,6 +3,9 @@
 :root {
   --background: #ffffff;
   --foreground: #171717;
+  --tide-bg: #ffffff;
+  --tide-text: #000000;
+  --tide-border: #000000;
 }
 
 @theme inline {
@@ -20,7 +23,12 @@
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
+  background: var(--tide-bg);
+  color: var(--tide-text);
   font-family: Arial, Helvetica, sans-serif;
+}
+
+/* Apply custom colors to all elements */
+* {
+  border-color: var(--tide-border);
 }

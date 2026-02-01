@@ -84,8 +84,8 @@ export default function TaskPanel() {
 
   return (
     <div className="h-full flex flex-col border-r border-black bg-white">
-      <div className="p-6 border-b border-black">
-        <div className="flex items-center justify-between mb-4">
+      <div className="p-4 border-b border-black">
+        <div className="flex items-center justify-between mb-2">
           <h2 className="text-xl font-bold text-black">Tasks</h2>
           {!showAddForm && (
             <button

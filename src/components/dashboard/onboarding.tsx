@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useCreateTask, useTasks } from "@/hooks/use-tide";
 import { useQueryClient } from "@tanstack/react-query";
 import { X } from "lucide-react";
+import { UserButton } from "@clerk/nextjs";
 
 interface OnboardingProps {
   onComplete?: () => void;
@@ -53,6 +54,9 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
     // Notify parent component
     if (onComplete) {
       onComplete();
+    } else {
+      // If no onComplete callback, reload to trigger dashboard view
+      window.location.reload();
     }
   };
 
@@ -60,8 +64,17 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
 
   return (
     <div className="h-screen flex flex-col bg-white">
-      <header className="border-b border-black p-4">
+      <header className="border-b border-black p-4 flex items-center justify-between">
         <h1 className="text-2xl font-bold text-black">TIDE</h1>
+        <UserButton
+          appearance={{
+            elements: {
+              avatarBox: "w-8 h-8",
+              userButtonPopoverCard: "border border-black",
+              userButtonPopoverActionButton: "text-black hover:bg-black hover:text-white",
+            },
+          }}
+        />
       </header>
       
       <div className="flex-1 flex flex-col relative">

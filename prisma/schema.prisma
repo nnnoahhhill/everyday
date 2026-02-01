@@ -7,12 +7,19 @@ datasource db {
 }
 
 model User {
-  id        String    @id // Clerk user ID format (not UUID)
-  username  String    @unique
-  email     String?
-  createdAt DateTime  @default(now()) @map("created_at")
-  deletedAt DateTime? @map("deleted_at")
-  tasks     Task[]
+  id              String           @id // Clerk user ID format (not UUID)
+  username        String           @unique
+  email           String?
+  createdAt       DateTime         @default(now()) @map("created_at")
+  deletedAt       DateTime?        @map("deleted_at")
+  tasks           Task[]
+  todoItems       TodoItem[]
+  todos           Todo[]
+  todoCompletions TodoCompletion[]
+  todoPushes      TodoPush[]
+  dailyMoods      DailyMood[]
+  userLabels      UserLabel[]
+  todoNoteHistory TodoNoteHistory[]
 }
 
 model Task {
@@ -42,4 +49,115 @@ model TaskDayLog {
 
   @@unique([taskId, localDate])
   @@index([userId, localDate])
+}
+
+model TodoItem {
+  id           String           @id @default(uuid()) @db.Uuid
+  userId       String           @map("user_id")
+  title        String
+  description  String?
+  notes        String? // Text-only notes/links
+  intensity    String           @default("moderate") // "chill" | "moderate" | "kinda_hard" | "damn_son"
+  daysNeeded   Int?
+  isFun        Boolean          @default(false)
+  isWork       Boolean          @default(false)
+  isPlay       Boolean          @default(false)
+  customLabels String[]         @default([]) // Array of custom user labels
+  createdAt    DateTime         @default(now()) @map("created_at") // Time added to master bank
+  updatedAt    DateTime         @updatedAt @map("updated_at")
+  deletedAt    DateTime?        @map("deleted_at")
+  user         User             @relation(fields: [userId], references: [id])
+  todos        Todo[]
+  completions  TodoCompletion[]
+  noteHistory  TodoNoteHistory[]
+
+  @@index([userId])
+  @@index([userId, deletedAt])
+}
+
+model Todo {
+  id            String           @id @default(uuid()) @db.Uuid
+  todoItemId    String           @map("todo_item_id") @db.Uuid
+  userId        String           @map("user_id")
+  listType      String // "today" | "tomorrow" | "this_week" | "this_month"
+  doneByDate    DateTime?        @map("done_by_date")
+  scheduledTime DateTime?        @map("scheduled_time") // Specific time if needed
+  order         Int              @default(0) // For drag-and-drop ordering
+  status        String           @default("pending") // "pending" | "completed" | "pushed" | "missed"
+  createdAt     DateTime         @default(now()) @map("created_at") // Time put into todo list
+  updatedAt     DateTime         @updatedAt @map("updated_at")
+  todoItem      TodoItem         @relation(fields: [todoItemId], references: [id])
+  user          User             @relation(fields: [userId], references: [id])
+  completions   TodoCompletion[]
+  pushes        TodoPush[]
+
+  @@index([userId, listType])
+  @@index([userId, listType, order])
+}
+
+model TodoCompletion {
+  id          String   @id @default(uuid()) @db.Uuid
+  todoId      String   @map("todo_id") @db.Uuid
+  todoItemId  String   @map("todo_item_id") @db.Uuid
+  userId      String   @map("user_id")
+  completedAt DateTime @default(now()) @map("completed_at") // Time completed
+  wasOnTime   Boolean // Completed by doneByDate
+  notes       String?
+  todo        Todo     @relation(fields: [todoId], references: [id])
+  todoItem    TodoItem @relation(fields: [todoItemId], references: [id])
+  user        User     @relation(fields: [userId], references: [id])
+
+  @@index([userId, completedAt])
+}
+
+model TodoNoteHistory {
+  id            String          @id @default(uuid()) @db.Uuid
+  todoItemId    String          @map("todo_item_id") @db.Uuid
+  userId        String          @map("user_id")
+  note          String
+  createdAt     DateTime        @default(now()) @map("created_at")
+  todoItem      TodoItem        @relation(fields: [todoItemId], references: [id])
+  user          User            @relation(fields: [userId], references: [id])
+
+  @@index([todoItemId, createdAt])
+  @@index([userId])
+}
+
+model TodoPush {
+  id           String   @id @default(uuid()) @db.Uuid
+  todoId       String   @map("todo_id") @db.Uuid
+  userId       String   @map("user_id")
+  fromListType String   @map("from_list_type")
+  toListType   String   @map("to_list_type")
+  pushedAt     DateTime @default(now()) @map("pushed_at")
+  todo         Todo     @relation(fields: [todoId], references: [id])
+  user         User     @relation(fields: [userId], references: [id])
+
+  @@index([userId, pushedAt])
+}
+
+model DailyMood {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String   @map("user_id")
+  localDate DateTime @map("local_date") @db.Date
+  feelings  String[] // ["happy", "sad", "angry", "tired", "energized", "accomplished", "stressed", "anxious"]
+  rating    Int // 0-10 scale
+  notes     String?
+  createdAt DateTime @default(now()) @map("created_at")
+  user      User     @relation(fields: [userId], references: [id])
+
+  @@unique([userId, localDate])
+  @@index([userId, localDate])
+}
+
+model UserLabel {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String   @map("user_id")
+  name      String
+  color     String? // Optional color for UI
+  createdAt DateTime @default(now()) @map("created_at")
+  user      User     @relation(fields: [userId], references: [id])
+
+  @@unique([userId, name])
+  @@index([userId])
 }
