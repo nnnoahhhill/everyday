@@ -6,30 +6,30 @@ import { NextResponse } from "next/server";
 
 const schema = z.object({ name: z.string().min(1).max(50) });
 
-const ADMIN_ID = process.env.ADMIN_USER_ID!;
-
-async function ensureAdminUser() {
+async function ensureUser(userId: string) {
+  // Ensure user exists in our database (sync with Clerk)
+  // Clerk user IDs are like "user_3953cBpnciQgg0gWil8FJSHv777"
   await prisma.user.upsert({
-    where: { id: ADMIN_ID },
+    where: { id: userId },
     update: {},
     create: {
-      id: ADMIN_ID,
-      username: process.env.ADMIN_USERNAME || "admin",
+      id: userId,
+      username: userId, // Use Clerk user ID as username (or extract from Clerk if needed)
     },
   });
 }
 
 export async function POST(req: Request) {
   try {
-    await requireAuth();
+    const userId = await requireAuth();
     const body = schema.parse(await req.json());
 
-    await ensureAdminUser();
+    await ensureUser(userId);
 
     const count = await prisma.task.count({ 
       where: { 
         active: true, 
-        userId: ADMIN_ID,
+        userId,
         deletedAt: null, // Only count non-deleted tasks
       } 
     });
@@ -41,7 +41,7 @@ export async function POST(req: Request) {
       data: {
         id: uuidv7(),
         name: body.name,
-        userId: ADMIN_ID,
+        userId,
       },
     });
     return NextResponse.json(task);
@@ -55,7 +55,7 @@ export async function POST(req: Request) {
 
 export async function GET(req: Request) {
   try {
-    await requireAuth();
+    const userId = await requireAuth();
     const { searchParams } = new URL(req.url);
     const date = searchParams.get("date"); // Optional: filter logs by date
     const includeArchived = searchParams.get("archived") === "true";
@@ -63,7 +63,7 @@ export async function GET(req: Request) {
     const tasks = await prisma.task.findMany({
       where: { 
         active: true, 
-        userId: ADMIN_ID,
+        userId,
         ...(includeArchived ? {} : { deletedAt: null }), // Only non-deleted unless archived=true
       },
       include: date ? {

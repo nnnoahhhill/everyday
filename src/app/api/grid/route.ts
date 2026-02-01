@@ -2,11 +2,9 @@ import { prisma } from "@/lib/prisma";
 import { requireAuth } from "@/lib/auth";
 import { NextResponse } from "next/server";
 
-const ADMIN_ID = process.env.ADMIN_USER_ID!;
-
 export async function GET(req: Request) {
   try {
-    await requireAuth();
+    const userId = await requireAuth();
     const { searchParams } = new URL(req.url);
     const start = searchParams.get("start");
     const end = searchParams.get("end");
@@ -25,8 +23,9 @@ export async function GET(req: Request) {
 
     const tasks = await prisma.task.findMany({
       where: {
-        userId: ADMIN_ID,
+        userId,
         active: true,
+        deletedAt: null,
       },
       include: {
         logs: {

@@ -7,7 +7,7 @@ datasource db {
 }
 
 model User {
-  id        String    @id @db.Uuid
+  id        String    @id // Clerk user ID format (not UUID)
   username  String    @unique
   email     String?
   createdAt DateTime  @default(now()) @map("created_at")
@@ -17,7 +17,7 @@ model User {
 
 model Task {
   id        String       @id @db.Uuid
-  userId    String       @map("user_id") @db.Uuid
+  userId    String       @map("user_id") // Clerk user ID format (not UUID)
   name      String
   active    Boolean      @default(true)
   createdAt DateTime     @default(now()) @map("created_at")
@@ -33,7 +33,7 @@ model Task {
 model TaskDayLog {
   id        String   @id @db.Uuid
   taskId    String   @map("task_id") @db.Uuid
-  userId    String   @map("user_id") @db.Uuid
+  userId    String   @map("user_id") // Clerk user ID format (not UUID)
   localDate DateTime @map("local_date") @db.Date
   status    String
   source    String

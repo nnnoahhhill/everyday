@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useTasks } from "@/hooks/use-tide";
+import { UserButton } from "@clerk/nextjs";
 import TaskPanel from "./task-panel";
 import ProgressGrid from "./progress-grid";
 import SettingsModal from "./settings-modal";
@@ -10,40 +11,36 @@ import { Settings } from "lucide-react";
 
 export default function DashboardClient() {
   const [showSettings, setShowSettings] = useState(false);
-  const [onboardingComplete, setOnboardingComplete] = useState(false);
   const { data: tasks, isLoading } = useTasks();
   const hasTasks = tasks && tasks.length > 0;
 
-  // Check localStorage for onboarding completion status
-  useEffect(() => {
-    const completed = localStorage.getItem("tide_onboarding_complete") === "true";
-    setOnboardingComplete(completed);
-  }, []);
-
-  // If no tasks, always show onboarding (reset onboarding state)
-  useEffect(() => {
-    if (!hasTasks && !isLoading) {
-      localStorage.removeItem("tide_onboarding_complete");
-      setOnboardingComplete(false);
-    }
-  }, [hasTasks, isLoading]);
-
-  // If no tasks OR onboarding not complete, show onboarding
-  if (!isLoading && (!hasTasks || !onboardingComplete)) {
-    return <Onboarding onComplete={() => setOnboardingComplete(true)} />;
+  // If no tasks, show onboarding (new users start here)
+  if (!isLoading && !hasTasks) {
+    return <Onboarding onComplete={() => {}} />;
   }
 
   return (
     <div className="h-screen flex flex-col bg-white">
       <header className="border-b border-black p-4 flex items-center justify-between">
         <h1 className="text-2xl font-bold text-black">TIDE</h1>
-        <button
-          onClick={() => setShowSettings(true)}
-          className="text-black hover:bg-black hover:text-white p-2"
-          title="Settings"
-        >
-          <Settings size={20} />
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setShowSettings(true)}
+            className="text-black hover:bg-black hover:text-white p-2"
+            title="Settings"
+          >
+            <Settings size={20} />
+          </button>
+          <UserButton 
+            appearance={{
+              elements: {
+                avatarBox: "w-8 h-8",
+                userButtonPopoverCard: "border border-black",
+                userButtonPopoverActionButton: "text-black hover:bg-black hover:text-white",
+              },
+            }}
+          />
+        </div>
       </header>
       
       <div className="flex-1 flex overflow-hidden">

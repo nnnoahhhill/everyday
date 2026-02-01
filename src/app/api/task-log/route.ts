@@ -10,7 +10,6 @@ const schema = z.object({
   status: z.enum(["DONE", "PARTIAL"]),
 });
 
-const ADMIN_ID = process.env.ADMIN_USER_ID!;
 
 function normalizeDate(dateStr: string): Date {
   // Validate and normalize YYYY-MM-DD format
@@ -37,14 +36,14 @@ function normalizeDate(dateStr: string): Date {
 
 export async function POST(req: Request) {
   try {
-    await requireAuth();
+    const userId = await requireAuth();
     const data = schema.parse(await req.json());
 
     const localDate = normalizeDate(data.localDate);
 
     // Verify task exists and belongs to user
     const task = await prisma.task.findFirst({
-      where: { id: data.taskId, userId: ADMIN_ID, active: true },
+      where: { id: data.taskId, userId, active: true },
     });
     
     if (!task) {
@@ -65,7 +64,7 @@ export async function POST(req: Request) {
       create: {
         id: uuidv7(),
         taskId: data.taskId,
-        userId: ADMIN_ID,
+        userId,
         localDate: localDate,
         status: data.status,
         source: "USER",
@@ -86,7 +85,7 @@ export async function POST(req: Request) {
 
 export async function DELETE(req: Request) {
   try {
-    await requireAuth();
+    const userId = await requireAuth();
     const { searchParams } = new URL(req.url);
     const taskId = searchParams.get("taskId");
     const localDateStr = searchParams.get("localDate");
@@ -99,7 +98,7 @@ export async function DELETE(req: Request) {
 
     // Verify task exists and belongs to user
     const task = await prisma.task.findFirst({
-      where: { id: taskId, userId: ADMIN_ID },
+      where: { id: taskId, userId },
     });
     
     if (!task) {
@@ -110,7 +109,7 @@ export async function DELETE(req: Request) {
       where: {
         taskId,
         localDate,
-        userId: ADMIN_ID,
+        userId,
       },
     });
 

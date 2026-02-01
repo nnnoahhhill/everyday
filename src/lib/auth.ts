@@ -1,9 +1,24 @@
-import { cookies } from "next/headers";
+import { auth } from "@clerk/nextjs/server";
 
+/**
+ * Get the current authenticated user ID
+ * Throws error if not authenticated
+ */
 export async function requireAuth() {
-  const cookieStore = await cookies();
-  const session = cookieStore.get("tide_session")?.value;
-  if (session !== "admin") {
+  const { userId } = await auth();
+  
+  if (!userId) {
     throw new Error("UNAUTHORIZED");
   }
+  
+  return userId;
+}
+
+/**
+ * Get the current authenticated user ID (optional)
+ * Returns null if not authenticated
+ */
+export async function getUserId() {
+  const { userId } = await auth();
+  return userId;
 }

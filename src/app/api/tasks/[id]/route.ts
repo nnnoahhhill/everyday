@@ -8,19 +8,17 @@ const updateSchema = z.object({
   active: z.boolean().optional(),
 });
 
-const ADMIN_ID = process.env.ADMIN_USER_ID!;
-
 export async function PUT(
   req: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    await requireAuth();
+    const userId = await requireAuth();
     const { id } = await params;
     const body = updateSchema.parse(await req.json());
 
     const task = await prisma.task.update({
-      where: { id, userId: ADMIN_ID },
+      where: { id, userId },
       data: body,
     });
 
@@ -38,12 +36,12 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    await requireAuth();
+    const userId = await requireAuth();
     const { id } = await params;
 
     // Soft delete - archive the task
     await prisma.task.update({
-      where: { id, userId: ADMIN_ID },
+      where: { id, userId },
       data: { 
         deletedAt: new Date(),
         active: false,
