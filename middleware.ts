@@ -1,8 +1,6 @@
 import { clerkMiddleware } from "@clerk/nextjs/server";
 
-export default clerkMiddleware({
-  domain: process.env.NEXT_PUBLIC_CLERK_DOMAIN || "weeeee.fun",
-});
+export default clerkMiddleware();
 
 export const config = {
   matcher: [
