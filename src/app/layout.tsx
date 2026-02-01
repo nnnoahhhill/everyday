@@ -19,7 +19,11 @@ export default function RootLayout({
   const publishableKey = process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY;
   
   return (
-    <ClerkProvider publishableKey={publishableKey}>
+    <ClerkProvider 
+      publishableKey={publishableKey}
+      domain={process.env.NEXT_PUBLIC_CLERK_DOMAIN}
+      proxyUrl={process.env.NEXT_PUBLIC_CLERK_PROXY_URL}
+    >
       <html lang="en">
         <body className={inter.className}>
           <QueryProvider>
