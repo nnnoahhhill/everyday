@@ -17,7 +17,9 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <ClerkProvider>
+    <ClerkProvider
+      domain={process.env.NEXT_PUBLIC_CLERK_DOMAIN || "weeeee.fun"}
+    >
       <html lang="en">
         <body className={inter.className}>
           <QueryProvider>
