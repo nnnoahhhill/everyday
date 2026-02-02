@@ -46,6 +46,10 @@ export async function GET(req: Request) {
     if (error.message === "UNAUTHORIZED") {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    console.error("Grid GET error:", error);
+    return NextResponse.json({ 
+      error: error.message || "Internal server error",
+      details: process.env.NODE_ENV === "development" ? String(error) : undefined
+    }, { status: 500 });
   }
 }
