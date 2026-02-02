@@ -66,14 +66,16 @@ export async function GET(req: Request) {
         userId,
         ...(includeArchived ? {} : { deletedAt: null }), // Only non-deleted unless archived=true
       },
-      include: date ? {
-        logs: {
-          where: {
-            localDate: new Date(date),
+      ...(date ? {
+        include: {
+          logs: {
+            where: {
+              localDate: new Date(date),
+            },
+            take: 1,
           },
-          take: 1,
         },
-      } : undefined,
+      } : {}),
       orderBy: { createdAt: "asc" },
     });
     return NextResponse.json(tasks);
