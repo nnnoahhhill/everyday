@@ -9,11 +9,26 @@ import SettingsModal from "./settings-modal";
 import Onboarding from "./onboarding";
 import TodoListTab from "./todo-list-tab";
 import MoodTracker from "./mood-tracker";
+import MobileDashboard from "./mobile-dashboard";
 import { Settings } from "lucide-react";
 
 type TabType = "everyday" | "todo";
 
 export default function DashboardClient() {
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    checkMobile();
+    window.addEventListener("resize", checkMobile);
+    return () => window.removeEventListener("resize", checkMobile);
+  }, []);
+
+  if (isMobile) {
+    return <MobileDashboard />;
+  }
   const [showSettings, setShowSettings] = useState(false);
   const [activeTab, setActiveTab] = useState<TabType>("everyday");
   const { data: tasks, isLoading } = useTasks();
