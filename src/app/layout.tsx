@@ -34,6 +34,8 @@ export default function RootLayout({
       <html lang="en">
         <head>
           <link rel="manifest" href="/manifest.json" />
+          <link rel="icon" href="/favicon.ico" type="image/x-icon" />
+          <link rel="icon" href="/favicon.gif" type="image/gif" />
           <meta name="theme-color" content="#000000" />
           <meta name="apple-mobile-web-app-capable" content="yes" />
           <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
