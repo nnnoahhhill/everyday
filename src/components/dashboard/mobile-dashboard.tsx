@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useTasks, useLogTask, useDeleteTask, useCreateTask, useUpdateTask } from "@/hooks/use-tide";
 import { useUIStore } from "@/store/use-ui-store";
+import { useQueryClient } from "@tanstack/react-query";
 import { UserButton } from "@clerk/nextjs";
 import { Settings, X, Grid3x3, TrendingUp, ChevronUp, Edit2, Trash2, GripVertical } from "lucide-react";
 import ProgressGrid from "./progress-grid";
@@ -17,6 +18,7 @@ type ViewMode = "list" | "grid" | "graph";
 
 export default function MobileDashboard() {
   const { selectedDate } = useUIStore();
+  const queryClient = useQueryClient();
   const { data: tasks, isLoading } = useTasks(selectedDate);
   const logTask = useLogTask();
   const deleteTask = useDeleteTask();
@@ -45,7 +47,24 @@ export default function MobileDashboard() {
     }
   }, []);
 
-  if (!isLoading && (!tasks || tasks.length === 0 || !onboardingComplete)) {
+  // Cleanup long press timer on unmount
+  useEffect(() => {
+    return () => {
+      if (longPressTimer.current) {
+        clearTimeout(longPressTimer.current);
+      }
+    };
+  }, []);
+
+  if (isLoading) {
+    return (
+      <div className="h-screen flex items-center justify-center bg-white">
+        <p className="text-black">Loading...</p>
+      </div>
+    );
+  }
+
+  if (!onboardingComplete) {
     return <Onboarding onComplete={() => {
       setOnboardingComplete(true);
       if (typeof window !== "undefined") {
@@ -69,10 +88,15 @@ export default function MobileDashboard() {
       // Clear (re-tap)
       fetch(`/api/task-log?taskId=${taskId}&localDate=${selectedDate}`, {
         method: "DELETE",
-      }).then(() => {
-        if (typeof window !== "undefined") {
-          window.location.reload();
+      })
+      .then((res) => {
+        if (res.ok) {
+          queryClient.invalidateQueries({ queryKey: ["tasks"] });
+          queryClient.invalidateQueries({ queryKey: ["grid"] });
         }
+      })
+      .catch((err) => {
+        console.error("Failed to clear task:", err);
       });
     } else if (currentStatus === "PARTIAL") {
       // PARTIAL -> DONE
@@ -92,10 +116,15 @@ export default function MobileDashboard() {
       // Clear partial
       fetch(`/api/task-log?taskId=${taskId}&localDate=${selectedDate}`, {
         method: "DELETE",
-      }).then(() => {
-        if (typeof window !== "undefined") {
-          window.location.reload();
+      })
+      .then((res) => {
+        if (res.ok) {
+          queryClient.invalidateQueries({ queryKey: ["tasks"] });
+          queryClient.invalidateQueries({ queryKey: ["grid"] });
         }
+      })
+      .catch((err) => {
+        console.error("Failed to clear partial task:", err);
       });
     } else {
       // Set to PARTIAL
@@ -104,6 +133,9 @@ export default function MobileDashboard() {
   };
 
   const handleTouchStart = (taskId: string) => {
+    if (longPressTimer.current) {
+      clearTimeout(longPressTimer.current);
+    }
     longPressTaskId.current = taskId;
     longPressTimer.current = setTimeout(() => {
       if (longPressTaskId.current === taskId) {
@@ -126,17 +158,25 @@ export default function MobileDashboard() {
   const handleAddTask = async (e: React.FormEvent) => {
     e.preventDefault();
     if (newTaskName.trim()) {
-      await createTask.mutateAsync(newTaskName.trim());
-      setNewTaskName("");
-      setShowAddForm(false);
+      try {
+        await createTask.mutateAsync(newTaskName.trim());
+        setNewTaskName("");
+        setShowAddForm(false);
+      } catch (err) {
+        console.error("Failed to create task:", err);
+      }
     }
   };
 
   const handleSaveEdit = async (taskId: string) => {
     if (editName.trim()) {
-      await updateTask.mutateAsync({ taskId, name: editName.trim() });
-      setEditingId(null);
-      setEditName("");
+      try {
+        await updateTask.mutateAsync({ taskId, name: editName.trim() });
+        setEditingId(null);
+        setEditName("");
+      } catch (err) {
+        console.error("Failed to update task:", err);
+      }
     }
   };
 
@@ -202,7 +242,7 @@ export default function MobileDashboard() {
             )}
 
             <div className="space-y-2">
-              {tasks?.map((task: any) => {
+              {tasks && tasks.length > 0 ? tasks.map((task: any) => {
                 const log = task.logs?.[0];
                 const status = log?.status;
                 const isDone = status === "DONE";
@@ -301,9 +341,13 @@ export default function MobileDashboard() {
                     )}
                   </div>
                 );
-              })}
+              }) : (
+                <div className="text-center text-black py-8">
+                  <p>No tasks yet. Add your first task!</p>
+                </div>
+              )}
               
-              {!showAddForm && (
+              {!showAddForm && tasks && tasks.length > 0 && (
                 <button
                   onClick={() => setShowAddForm(true)}
                   className="w-full border-2 border-dashed border-black p-4 text-black hover:bg-black hover:text-white"

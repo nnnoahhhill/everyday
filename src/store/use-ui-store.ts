@@ -1,3 +1,5 @@
+"use client";
+
 import { create } from "zustand";
 
 interface UIState {
@@ -5,7 +7,14 @@ interface UIState {
   setSelectedDate: (date: string) => void;
 }
 
+const getTodayDate = (): string => {
+  if (typeof window === "undefined") {
+    return "1970-01-01"; // Fallback for SSR
+  }
+  return new Date().toISOString().split("T")[0];
+};
+
 export const useUIStore = create<UIState>((set) => ({
-  selectedDate: new Date().toISOString().split("T")[0],
+  selectedDate: getTodayDate(),
   setSelectedDate: (date) => set({ selectedDate: date }),
 }));

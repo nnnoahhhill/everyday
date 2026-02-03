@@ -1,12 +1,18 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useGrid } from "@/hooks/use-tide";
 import { format, subDays, addDays, eachDayOfInterval, parse } from "date-fns";
 import { Grid3x3, TrendingUp } from "lucide-react";
 
 export default function ProgressGrid({ initialViewMode }: { initialViewMode?: "grid" | "graph" }) {
   const [viewMode, setViewMode] = useState<"grid" | "graph">(initialViewMode || "grid");
+  
+  useEffect(() => {
+    if (initialViewMode) {
+      setViewMode(initialViewMode);
+    }
+  }, [initialViewMode]);
   // Default to 30 days starting from today
   const [startDate, setStartDate] = useState(format(new Date(), "yyyy-MM-dd"));
   const [endDate, setEndDate] = useState(format(addDays(new Date(), 29), "yyyy-MM-dd")); // 30 days total (today + 29 more)
