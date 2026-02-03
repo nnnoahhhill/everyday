@@ -18,6 +18,7 @@ export default function DashboardClient() {
   const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
+    if (typeof window === "undefined") return;
     const checkMobile = () => {
       setIsMobile(window.innerWidth < 768);
     };
@@ -37,8 +38,10 @@ export default function DashboardClient() {
 
   // Check if onboarding is complete from localStorage
   useEffect(() => {
-    const completed = localStorage.getItem("tide_onboarding_complete") === "true";
-    setOnboardingComplete(completed);
+    if (typeof window !== "undefined") {
+      const completed = localStorage.getItem("tide_onboarding_complete") === "true";
+      setOnboardingComplete(completed);
+    }
   }, []);
 
   // If no tasks OR onboarding not complete, show onboarding
@@ -46,7 +49,9 @@ export default function DashboardClient() {
     return <Onboarding onComplete={() => {
       setOnboardingComplete(true);
       // Force a re-render by invalidating queries
-      window.location.reload();
+      if (typeof window !== "undefined") {
+        window.location.reload();
+      }
     }} />;
   }
 

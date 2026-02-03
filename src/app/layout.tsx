@@ -16,12 +16,13 @@ export const metadata: Metadata = {
     statusBarStyle: "black-translucent",
     title: "TIDE",
   },
-  viewport: {
-    width: "device-width",
-    initialScale: 1,
-    maximumScale: 1,
-    userScalable: false,
-  },
+};
+
+export const viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
 };
 
 export default function RootLayout({
@@ -35,7 +36,6 @@ export default function RootLayout({
         <head>
           <link rel="manifest" href="/manifest.json" />
           <link rel="icon" href="/favicon.ico" type="image/x-icon" />
-          <link rel="icon" href="/favicon.gif" type="image/gif" />
           <meta name="theme-color" content="#000000" />
           <meta name="apple-mobile-web-app-capable" content="yes" />
           <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />

@@ -39,14 +39,18 @@ export default function MobileDashboard() {
   const longPressTaskId = useRef<string | null>(null);
 
   useEffect(() => {
-    const completed = localStorage.getItem("tide_onboarding_complete") === "true";
-    setOnboardingComplete(completed);
+    if (typeof window !== "undefined") {
+      const completed = localStorage.getItem("tide_onboarding_complete") === "true";
+      setOnboardingComplete(completed);
+    }
   }, []);
 
   if (!isLoading && (!tasks || tasks.length === 0 || !onboardingComplete)) {
     return <Onboarding onComplete={() => {
       setOnboardingComplete(true);
-      window.location.reload();
+      if (typeof window !== "undefined") {
+        window.location.reload();
+      }
     }} />;
   }
 
@@ -65,7 +69,11 @@ export default function MobileDashboard() {
       // Clear (re-tap)
       fetch(`/api/task-log?taskId=${taskId}&localDate=${selectedDate}`, {
         method: "DELETE",
-      }).then(() => window.location.reload());
+      }).then(() => {
+        if (typeof window !== "undefined") {
+          window.location.reload();
+        }
+      });
     } else if (currentStatus === "PARTIAL") {
       // PARTIAL -> DONE
       logTask.mutate({ taskId, localDate: selectedDate, status: "DONE" });
@@ -84,7 +92,11 @@ export default function MobileDashboard() {
       // Clear partial
       fetch(`/api/task-log?taskId=${taskId}&localDate=${selectedDate}`, {
         method: "DELETE",
-      }).then(() => window.location.reload());
+      }).then(() => {
+        if (typeof window !== "undefined") {
+          window.location.reload();
+        }
+      });
     } else {
       // Set to PARTIAL
       logTask.mutate({ taskId, localDate: selectedDate, status: "PARTIAL" });
