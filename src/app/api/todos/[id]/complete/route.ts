@@ -42,6 +42,12 @@ export async function POST(
       },
     });
 
+    // Mark todoItem as deleted (remove from master bank)
+    await prisma.todoItem.update({
+      where: { id: todo.todoItemId },
+      data: { deletedAt: new Date() },
+    });
+
     return NextResponse.json({ ok: true });
   } catch (error: any) {
     if (error.message === "UNAUTHORIZED") {

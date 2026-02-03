@@ -13,6 +13,8 @@ const updateSchema = z.object({
   isWork: z.boolean().optional(),
   isPlay: z.boolean().optional(),
   customLabels: z.array(z.string()).optional(),
+  earliestStart: z.string().datetime().optional().nullable(),
+  latest: z.string().datetime().optional().nullable(),
 });
 
 export async function PUT(
@@ -24,9 +26,17 @@ export async function PUT(
     const { id } = await params;
     const data = updateSchema.parse(await req.json());
 
+    const updateData: any = { ...data };
+    if (data.earliestStart !== undefined) {
+      updateData.earliestStart = data.earliestStart ? new Date(data.earliestStart) : null;
+    }
+    if (data.latest !== undefined) {
+      updateData.latest = data.latest ? new Date(data.latest) : null;
+    }
+
     const item = await prisma.todoItem.update({
       where: { id, userId },
-      data,
+      data: updateData,
     });
 
     return NextResponse.json(item);

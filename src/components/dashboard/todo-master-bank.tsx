@@ -18,10 +18,8 @@ export default function TodoMasterBank() {
     intensity: null,
     daysNeeded: null,
   });
-
-  useEffect(() => {
-    fetchItems();
-  }, []);
+  const [sortBy, setSortBy] = useState<string>("createdAt");
+  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
 
   useEffect(() => {
     applyFilters();
@@ -70,7 +68,7 @@ export default function TodoMasterBank() {
   const fetchItems = async () => {
     setIsLoading(true);
     try {
-      const res = await fetch("/api/todo-items");
+      const res = await fetch(`/api/todo-items?sortBy=${sortBy}&sortOrder=${sortOrder}`);
       if (res.ok) {
         const data = await res.json();
         setItems(data);
@@ -82,10 +80,14 @@ export default function TodoMasterBank() {
     }
   };
 
+  useEffect(() => {
+    fetchItems();
+  }, [sortBy, sortOrder]);
+
   return (
     <div className="h-full flex flex-col bg-white">
       <div className="p-4 border-b border-black">
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between mb-2">
           <h2 className="text-xl font-bold text-black">Master Bank</h2>
           <button
             onClick={() => setShowAddForm(true)}
@@ -93,6 +95,25 @@ export default function TodoMasterBank() {
           >
             <Plus size={16} className="inline mr-1" />
             Add
+          </button>
+        </div>
+        <div className="flex items-center gap-2 text-sm">
+          <label className="text-black">Sort by:</label>
+          <select
+            value={sortBy}
+            onChange={(e) => setSortBy(e.target.value)}
+            className="border border-black px-2 py-1 text-black bg-white"
+          >
+            <option value="createdAt">Created</option>
+            <option value="earliestStart">Earliest Start</option>
+            <option value="latest">Latest</option>
+            <option value="title">Title</option>
+          </select>
+          <button
+            onClick={() => setSortOrder(sortOrder === "asc" ? "desc" : "asc")}
+            className="border border-black px-2 py-1 text-black bg-white hover:bg-black hover:text-white"
+          >
+            {sortOrder === "asc" ? "↑" : "↓"}
           </button>
         </div>
       </div>
@@ -126,17 +147,28 @@ export default function TodoMasterBank() {
                   {item.description && (
                     <p className="text-sm mt-1 opacity-80 text-black group-hover:text-white">{item.description}</p>
                   )}
+                  {(item.earliestStart || item.latest) && (
+                    <div className="text-xs mt-1 text-black group-hover:text-white opacity-70">
+                      {item.earliestStart && (
+                        <span>Start: {new Date(item.earliestStart).toLocaleDateString()}</span>
+                      )}
+                      {item.earliestStart && item.latest && <span className="mx-2">•</span>}
+                      {item.latest && (
+                        <span>Latest: {new Date(item.latest).toLocaleDateString()}</span>
+                      )}
+                    </div>
+                  )}
                     <div className="flex gap-2 mt-2 flex-wrap">
                       {item.isFun && (
-                        <span className="text-xs px-2 py-0.5 border border-current">Fun</span>
+                        <span className="text-xs px-2 py-0.5 border border-black bg-white text-black group-hover:bg-white group-hover:text-black group-hover:border-black">Fun</span>
                       )}
                       {item.isWork && (
-                        <span className="text-xs px-2 py-0.5 border border-current">Work</span>
+                        <span className="text-xs px-2 py-0.5 border border-black bg-white text-black group-hover:bg-white group-hover:text-black group-hover:border-black">Work</span>
                       )}
                       {item.isPlay && (
-                        <span className="text-xs px-2 py-0.5 border border-current">Play</span>
+                        <span className="text-xs px-2 py-0.5 border border-black bg-white text-black group-hover:bg-white group-hover:text-black group-hover:border-black">Play</span>
                       )}
-                      <span className="text-xs px-2 py-0.5 border border-current capitalize">
+                      <span className="text-xs px-2 py-0.5 border border-black bg-white text-black group-hover:bg-white group-hover:text-black group-hover:border-black capitalize">
                         {item.intensity?.replace('_', ' ')}
                       </span>
                     </div>
@@ -186,7 +218,7 @@ export default function TodoMasterBank() {
       </div>
 
       {showAddForm && (
-        <div className="border-t border-black p-4 bg-white">
+        <div className="sticky bottom-0 border-t border-black p-4 bg-white z-10 shadow-lg">
           <TodoItemForm
             onSave={async () => {
               setShowAddForm(false);
@@ -198,7 +230,7 @@ export default function TodoMasterBank() {
       )}
 
       {editingId && (
-        <div className="border-t border-black p-4 bg-white">
+        <div className="sticky bottom-0 border-t border-black p-4 bg-white z-10 shadow-lg">
           <TodoItemForm
             initialData={items.find((i) => i.id === editingId)}
             onSave={async () => {
@@ -234,12 +266,22 @@ function TodoItemForm({ onSave, onCancel, initialData }: any) {
   const [isPlay, setIsPlay] = useState(initialData?.isPlay || false);
   const [notes, setNotes] = useState(initialData?.notes || "");
   const [customLabels, setCustomLabels] = useState<string[]>(initialData?.customLabels || []);
+  const [earliestStart, setEarliestStart] = useState(
+    initialData?.earliestStart ? new Date(initialData.earliestStart).toISOString().split('T')[0] : ""
+  );
+  const [latest, setLatest] = useState(
+    initialData?.latest ? new Date(initialData.latest).toISOString().split('T')[0] : ""
+  );
   const [availableTags, setAvailableTags] = useState<any[]>([]);
   const [isLoadingTags, setIsLoadingTags] = useState(false);
 
   useEffect(() => {
     fetchAvailableTags();
-  }, []);
+    if (initialData) {
+      setEarliestStart(initialData.earliestStart ? new Date(initialData.earliestStart).toISOString().split('T')[0] : "");
+      setLatest(initialData.latest ? new Date(initialData.latest).toISOString().split('T')[0] : "");
+    }
+  }, [initialData]);
 
   const fetchAvailableTags = async () => {
     setIsLoadingTags(true);
@@ -276,6 +318,8 @@ function TodoItemForm({ onSave, onCancel, initialData }: any) {
         isFun,
         isWork,
         isPlay,
+        earliestStart: earliestStart ? new Date(earliestStart).toISOString() : null,
+        latest: latest ? new Date(latest).toISOString() : null,
       };
 
       if (initialData) {
@@ -340,6 +384,26 @@ function TodoItemForm({ onSave, onCancel, initialData }: any) {
             placeholder="Optional"
             className="w-full border border-black px-3 py-2 text-black bg-white"
             min="1"
+          />
+        </div>
+      </div>
+      <div className="flex gap-4">
+        <div className="flex-1">
+          <label className="text-sm font-semibold text-black mb-1 block">Earliest Start (optional)</label>
+          <input
+            type="date"
+            value={earliestStart}
+            onChange={(e) => setEarliestStart(e.target.value)}
+            className="w-full border border-black px-3 py-2 text-black bg-white"
+          />
+        </div>
+        <div className="flex-1">
+          <label className="text-sm font-semibold text-black mb-1 block">Latest (optional)</label>
+          <input
+            type="date"
+            value={latest}
+            onChange={(e) => setLatest(e.target.value)}
+            className="w-full border border-black px-3 py-2 text-black bg-white"
           />
         </div>
       </div>

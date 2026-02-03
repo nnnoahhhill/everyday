@@ -63,6 +63,8 @@ model TodoItem {
   isWork       Boolean          @default(false)
   isPlay       Boolean          @default(false)
   customLabels String[]         @default([]) // Array of custom user labels
+  earliestStart DateTime?       @map("earliest_start") // Optional earliest start date
+  latest        DateTime?        // Optional latest date
   createdAt    DateTime         @default(now()) @map("created_at") // Time added to master bank
   updatedAt    DateTime         @updatedAt @map("updated_at")
   deletedAt    DateTime?        @map("deleted_at")
@@ -73,6 +75,8 @@ model TodoItem {
 
   @@index([userId])
   @@index([userId, deletedAt])
+  @@index([userId, earliestStart])
+  @@index([userId, latest])
 }
 
 model Todo {

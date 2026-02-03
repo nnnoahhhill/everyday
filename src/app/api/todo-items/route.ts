@@ -14,6 +14,8 @@ const createSchema = z.object({
   isWork: z.boolean().optional(),
   isPlay: z.boolean().optional(),
   customLabels: z.array(z.string()).optional().default([]),
+  earliestStart: z.string().datetime().optional().nullable(),
+  latest: z.string().datetime().optional().nullable(),
 });
 
 const updateSchema = createSchema.partial();
@@ -24,12 +26,24 @@ export async function GET(req: Request) {
     const { searchParams } = new URL(req.url);
     const includeDeleted = searchParams.get("archived") === "true";
 
+    const sortBy = searchParams.get("sortBy") || "createdAt";
+    const sortOrder = searchParams.get("sortOrder") || "desc";
+    
+    const orderBy: any = {};
+    if (sortBy === "earliestStart") {
+      orderBy.earliestStart = sortOrder;
+    } else if (sortBy === "latest") {
+      orderBy.latest = sortOrder;
+    } else {
+      orderBy[sortBy] = sortOrder;
+    }
+
     const items = await prisma.todoItem.findMany({
       where: {
         userId,
         ...(includeDeleted ? {} : { deletedAt: null }),
       },
-      orderBy: { createdAt: "desc" },
+      orderBy,
     });
 
     return NextResponse.json(items);
@@ -64,6 +78,8 @@ export async function POST(req: Request) {
         isWork: data.isWork ?? false,
         isPlay: data.isPlay ?? false,
         customLabels: data.customLabels || [],
+        earliestStart: data.earliestStart ? new Date(data.earliestStart) : null,
+        latest: data.latest ? new Date(data.latest) : null,
       },
       include: {
         todos: true,
