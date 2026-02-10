@@ -44,8 +44,8 @@ export default function DashboardClient() {
     }
   }, []);
 
-  // If no tasks OR onboarding not complete, show onboarding
-  if (!isLoading && (!hasTasks || !onboardingComplete)) {
+  // Show onboarding until user explicitly clicks continue
+  if (!isLoading && !onboardingComplete) {
     return <Onboarding onComplete={() => {
       setOnboardingComplete(true);
       // Force a re-render by invalidating queries
