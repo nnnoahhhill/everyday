@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useCreateTask, useTasks } from "@/hooks/use-tide";
 import { useQueryClient } from "@tanstack/react-query";
-import { X } from "lucide-react";
+import { X, ChevronRight } from "lucide-react";
 import { UserButton } from "@clerk/nextjs";
 
 interface OnboardingProps {
@@ -121,16 +121,16 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
             )}
           </div>
 
-          {canContinue && (
-            <div className="mt-6 text-center">
-              <button
-                onClick={handleContinue}
-                className="border border-black px-8 py-3 text-black bg-white hover:bg-black hover:text-white text-lg font-bold"
-              >
-                Continue
-              </button>
-            </div>
-          )}
+          <div className="mt-6 text-center">
+            <button
+              onClick={handleContinue}
+              disabled={!canContinue}
+              className="border border-black px-8 py-3 text-black bg-white hover:bg-black hover:text-white text-lg font-bold disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-white disabled:hover:text-black flex items-center gap-2 mx-auto"
+            >
+              Continue
+              <ChevronRight size={20} />
+            </button>
+          </div>
         </div>
       </div>
     </div>
