@@ -7,11 +7,20 @@ import { uuidv7 } from "uuidv7";
 // Load environment variables from .env files
 config();
 
-if (!process.env.DATABASE_URL) {
-  throw new Error("DATABASE_URL environment variable is not set");
+// Allow override with PROD_DATABASE_URL for production seeding
+const databaseUrl = process.env.PROD_DATABASE_URL || process.env.DATABASE_URL;
+
+if (!databaseUrl) {
+  throw new Error("DATABASE_URL or PROD_DATABASE_URL environment variable is not set");
 }
 
-const pool = new pg.Pool({ connectionString: process.env.DATABASE_URL });
+const isProduction = !!process.env.PROD_DATABASE_URL;
+if (isProduction) {
+  console.log("⚠️  PRODUCTION MODE: Seeding production database!");
+  console.log("   Database:", databaseUrl.replace(/:[^:@]+@/, ":****@"));
+}
+
+const pool = new pg.Pool({ connectionString: databaseUrl });
 const adapter = new PrismaPg(pool);
 
 const prisma = new PrismaClient({
@@ -20,7 +29,7 @@ const prisma = new PrismaClient({
 });
 
 const DEMO_USER_EMAIL = "kiakaha17@gmail.com";
-const DEMO_USER_ID = "user_39TJn4b3EOvWpVnU2lu5RMv1zaA"; // Real Clerk user ID
+const DEMO_USER_ID = "user_398w1amfd0BNNehWkBGyak9ePT4"; // Real Clerk user ID
 
 const TASKS = [
   "Bathroom routine",
@@ -108,7 +117,20 @@ function generateCompletionData(
 async function main() {
   console.log("🌱 Seeding demo data for", DEMO_USER_EMAIL);
 
-  // Create or update user (matching the app's ensureUser pattern)
+  // Delete any existing user with conflicting username (for clean demo data)
+  const existingUserByUsername = await prisma.user.findUnique({
+    where: { username: DEMO_USER_EMAIL.split("@")[0] },
+  });
+  
+  if (existingUserByUsername && existingUserByUsername.id !== DEMO_USER_ID) {
+    console.log(`⚠️  Deleting existing user with username "${DEMO_USER_EMAIL.split("@")[0]}" (ID: ${existingUserByUsername.id})`);
+    // Delete all related data first
+    await prisma.taskDayLog.deleteMany({ where: { userId: existingUserByUsername.id } });
+    await prisma.task.deleteMany({ where: { userId: existingUserByUsername.id } });
+    await prisma.user.delete({ where: { id: existingUserByUsername.id } });
+  }
+
+  // Create or update user
   const user = await prisma.user.upsert({
     where: { id: DEMO_USER_ID },
     update: {
@@ -118,7 +140,7 @@ async function main() {
     create: {
       id: DEMO_USER_ID,
       email: DEMO_USER_EMAIL,
-      username: DEMO_USER_EMAIL.split("@")[0], // Will be visible when they sign in
+      username: DEMO_USER_EMAIL.split("@")[0],
     },
   });
 
