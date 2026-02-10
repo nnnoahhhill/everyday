@@ -47,6 +47,15 @@ export default function MobileDashboard() {
     }
   }, []);
 
+  // Reset onboarding if all tasks are deleted
+  const hasTasks = tasks && tasks.length > 0;
+  useEffect(() => {
+    if (!isLoading && !hasTasks && onboardingComplete) {
+      localStorage.removeItem("tide_onboarding_complete");
+      setOnboardingComplete(false);
+    }
+  }, [isLoading, hasTasks, onboardingComplete]);
+
   // Cleanup long press timer on unmount
   useEffect(() => {
     return () => {
@@ -64,7 +73,7 @@ export default function MobileDashboard() {
     );
   }
 
-  if (!onboardingComplete) {
+  if (!hasTasks || !onboardingComplete) {
     return <Onboarding onComplete={() => {
       setOnboardingComplete(true);
       if (typeof window !== "undefined") {

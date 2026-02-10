@@ -44,8 +44,16 @@ export default function DashboardClient() {
     }
   }, []);
 
-  // Show onboarding until user explicitly clicks continue
-  if (!isLoading && !onboardingComplete) {
+  // Reset onboarding if all tasks are deleted
+  useEffect(() => {
+    if (!isLoading && !hasTasks && onboardingComplete) {
+      localStorage.removeItem("tide_onboarding_complete");
+      setOnboardingComplete(false);
+    }
+  }, [isLoading, hasTasks, onboardingComplete]);
+
+  // Show onboarding if no tasks or onboarding not complete
+  if (!isLoading && (!hasTasks || !onboardingComplete)) {
     return <Onboarding onComplete={() => {
       setOnboardingComplete(true);
       // Force a re-render by invalidating queries
