@@ -5,28 +5,24 @@ import { useTasks, useLogTask, useDeleteTask, useCreateTask, useUpdateTask } fro
 import { useUIStore } from "@/store/use-ui-store";
 import { useQueryClient } from "@tanstack/react-query";
 import { UserButton } from "@clerk/nextjs";
-import { Settings, X, Grid3x3, TrendingUp, ChevronUp, Edit2, Trash2, GripVertical } from "lucide-react";
+import { Settings, X, ChevronUp, Edit2, Trash2 } from "lucide-react";
 import ProgressGrid from "./progress-grid";
-import MoodTracker from "./mood-tracker";
 import TodoListTab from "./todo-list-tab";
 import SettingsModal from "./settings-modal";
 import Onboarding from "./onboarding";
-import { format } from "date-fns";
 
-type TabType = "everyday" | "mood" | "todo";
-type ViewMode = "list" | "grid" | "graph";
+type TabType = "everyday" | "progress" | "todo";
 
 export default function MobileDashboard() {
   const { selectedDate } = useUIStore();
   const queryClient = useQueryClient();
-  const { data: tasks, isLoading } = useTasks(selectedDate);
+  const { data: tasks, isLoading, error } = useTasks(selectedDate);
   const logTask = useLogTask();
   const deleteTask = useDeleteTask();
   const createTask = useCreateTask();
   const updateTask = useUpdateTask();
   
   const [activeTab, setActiveTab] = useState<TabType>("everyday");
-  const [viewMode, setViewMode] = useState<ViewMode>("list");
   const [showSettings, setShowSettings] = useState(false);
   const [showBottomPanel, setShowBottomPanel] = useState(false);
   const [showTaskSettings, setShowTaskSettings] = useState(false);
@@ -73,6 +69,14 @@ export default function MobileDashboard() {
     );
   }
 
+  if (error) {
+    return (
+      <div className="h-screen flex items-center justify-center bg-white">
+        <p className="text-red-600">Error loading tasks. Please refresh.</p>
+      </div>
+    );
+  }
+
   if (!hasTasks || !onboardingComplete) {
     return <Onboarding onComplete={() => {
       setOnboardingComplete(true);
@@ -83,13 +87,17 @@ export default function MobileDashboard() {
   }
 
   const handleTaskTap = (taskId: string) => {
+    if (!taskId || !selectedDate) return;
+    
     if (showTaskSettings) {
       // If settings mode is on, show task settings instead
       setSelectedTaskForSettings(taskId);
       return;
     }
     
-    const task = tasks?.find((t: any) => t.id === taskId);
+    const task = tasks?.find((t: any) => t?.id === taskId);
+    if (!task) return;
+    
     const log = task?.logs?.[0];
     const currentStatus = log?.status;
     
@@ -117,7 +125,11 @@ export default function MobileDashboard() {
   };
 
   const handleTaskLongPress = (taskId: string) => {
-    const task = tasks?.find((t: any) => t.id === taskId);
+    if (!taskId || !selectedDate) return;
+    
+    const task = tasks?.find((t: any) => t?.id === taskId);
+    if (!task) return;
+    
     const log = task?.logs?.[0];
     const currentStatus = log?.status;
     
@@ -142,6 +154,7 @@ export default function MobileDashboard() {
   };
 
   const handleTouchStart = (taskId: string) => {
+    if (!taskId) return;
     if (longPressTimer.current) {
       clearTimeout(longPressTimer.current);
     }
@@ -192,29 +205,20 @@ export default function MobileDashboard() {
   return (
     <div className="h-screen flex flex-col bg-white overflow-hidden">
       {/* Main Content */}
-      {activeTab === "everyday" && viewMode === "list" && (
+      {activeTab === "everyday" && (
         <div className="flex-1 overflow-y-auto pb-20">
           <div className="p-4">
             <div className="flex items-center justify-between mb-4">
               <h1 className="text-2xl font-bold text-black">Every Day</h1>
-              <div className="flex gap-2">
-                <button
-                  onClick={() => setShowTaskSettings(!showTaskSettings)}
-                  className={`p-2 border border-black ${
-                    showTaskSettings ? "bg-black text-white" : "bg-white text-black"
-                  } hover:bg-black hover:text-white`}
-                  title="Task Settings"
-                >
-                  <Settings size={20} />
-                </button>
-                <button
-                  onClick={() => setViewMode("grid")}
-                  className="p-2 border border-black hover:bg-black hover:text-white"
-                  title="View Grid"
-                >
-                  <Grid3x3 size={20} />
-                </button>
-              </div>
+              <button
+                onClick={() => setShowTaskSettings(!showTaskSettings)}
+                className={`p-2 border border-black ${
+                  showTaskSettings ? "bg-black text-white" : "bg-white text-black"
+                } hover:bg-black hover:text-white`}
+                title="Task Settings"
+              >
+                <Settings size={20} />
+              </button>
             </div>
             
             {showAddForm && (
@@ -252,6 +256,7 @@ export default function MobileDashboard() {
 
             <div className="space-y-2">
               {tasks && tasks.length > 0 ? tasks.map((task: any) => {
+                if (!task || !task.id) return null;
                 const log = task.logs?.[0];
                 const status = log?.status;
                 const isDone = status === "DONE";
@@ -260,7 +265,9 @@ export default function MobileDashboard() {
                 return (
                   <div
                     key={task.id}
-                    className="border border-black p-4 bg-white"
+                    className={`border border-black p-4 transition-colors ${
+                      isDone || isPartial ? "bg-black" : "bg-white"
+                    }`}
                   >
                     {editingId === task.id ? (
                       <div className="flex gap-2">
@@ -297,8 +304,8 @@ export default function MobileDashboard() {
                       </div>
                     ) : (
                       <div className="flex items-center gap-3">
-                        <div
-                          className="flex items-center gap-3 flex-1"
+                        <button
+                          className="flex items-center gap-3 flex-1 text-left"
                           onTouchStart={() => !showTaskSettings && handleTouchStart(task.id)}
                           onTouchEnd={() => !showTaskSettings && handleTouchEnd(task.id)}
                           onMouseDown={() => !showTaskSettings && handleTouchStart(task.id)}
@@ -311,16 +318,20 @@ export default function MobileDashboard() {
                           }}
                           onClick={() => showTaskSettings && handleTaskTap(task.id)}
                         >
-                          <div className={`w-6 h-6 border-2 border-black flex items-center justify-center flex-shrink-0 ${
+                          <div className={`w-6 h-6 border-2 border-black flex items-center justify-center flex-shrink-0 transition-colors ${
                             isDone ? "bg-black" : isPartial ? "bg-green-100" : "bg-white"
                           }`}>
                             {isDone && <span className="text-white text-sm">✓</span>}
                             {isPartial && <span className="text-black text-xs">○</span>}
                           </div>
-                          <span className={`flex-1 text-black ${isDone ? "line-through opacity-60" : ""}`}>
+                          <span className={`flex-1 transition-colors ${
+                            isDone || isPartial 
+                              ? "text-white" 
+                              : "text-black"
+                          } ${isDone ? "line-through opacity-60" : ""}`}>
                             {task.name}
                           </span>
-                        </div>
+                        </button>
                         {showTaskSettings && (
                           <div className="flex gap-2">
                             <button
@@ -369,69 +380,13 @@ export default function MobileDashboard() {
         </div>
       )}
 
-      {activeTab === "everyday" && viewMode === "grid" && (
+      {activeTab === "progress" && (
         <div className="flex-1 overflow-y-auto pb-20">
           <div className="p-4">
-            <div className="flex items-center justify-between mb-4">
-              <h1 className="text-2xl font-bold text-black">Progress Grid</h1>
-              <div className="flex gap-2">
-                <button
-                  onClick={() => setViewMode("list")}
-                  className="p-2 border border-black hover:bg-black hover:text-white"
-                  title="Back to List"
-                >
-                  <X size={20} />
-                </button>
-                <button
-                  onClick={() => setViewMode("graph")}
-                  className="p-2 border border-black hover:bg-black hover:text-white"
-                  title="Line Graph"
-                >
-                  <TrendingUp size={20} />
-                </button>
-              </div>
-            </div>
+            <h1 className="text-2xl font-bold text-black mb-4">Progress Grid</h1>
             <div className="overflow-x-auto">
               <ProgressGrid initialViewMode="grid" />
             </div>
-          </div>
-        </div>
-      )}
-
-      {activeTab === "everyday" && viewMode === "graph" && (
-        <div className="flex-1 overflow-y-auto pb-20">
-          <div className="p-4">
-            <div className="flex items-center justify-between mb-4">
-              <h1 className="text-2xl font-bold text-black">Progress Graph</h1>
-              <div className="flex gap-2">
-                <button
-                  onClick={() => setViewMode("grid")}
-                  className="p-2 border border-black hover:bg-black hover:text-white"
-                  title="Grid View"
-                >
-                  <Grid3x3 size={20} />
-                </button>
-                <button
-                  onClick={() => setViewMode("list")}
-                  className="p-2 border border-black hover:bg-black hover:text-white"
-                  title="Back to List"
-                >
-                  <X size={20} />
-                </button>
-              </div>
-            </div>
-            <div className="overflow-x-auto">
-              <ProgressGrid initialViewMode="graph" />
-            </div>
-          </div>
-        </div>
-      )}
-
-      {activeTab === "mood" && (
-        <div className="flex-1 overflow-y-auto pb-20">
-          <div className="p-4">
-            <h1 className="text-2xl font-bold text-black mb-4">How You Feeling Today</h1>
-            <MoodTracker />
           </div>
         </div>
       )}
@@ -446,10 +401,7 @@ export default function MobileDashboard() {
       <div className="fixed bottom-0 left-0 right-0 border-t border-black bg-white z-30">
         <div className="flex">
           <button
-            onClick={() => {
-              setActiveTab("everyday");
-              setViewMode("list");
-            }}
+            onClick={() => setActiveTab("everyday")}
             className={`flex-1 py-3 text-center font-semibold ${
               activeTab === "everyday" ? "bg-black text-white" : "bg-white text-black"
             }`}
@@ -457,12 +409,12 @@ export default function MobileDashboard() {
             Every Day
           </button>
           <button
-            onClick={() => setActiveTab("mood")}
+            onClick={() => setActiveTab("progress")}
             className={`flex-1 py-3 text-center font-semibold ${
-              activeTab === "mood" ? "bg-black text-white" : "bg-white text-black"
+              activeTab === "progress" ? "bg-black text-white" : "bg-white text-black"
             }`}
           >
-            Feeling
+            Progress
           </button>
           <button
             onClick={() => setActiveTab("todo")}
@@ -501,14 +453,16 @@ export default function MobileDashboard() {
             </button>
             <div className="flex items-center justify-between border border-black px-4 py-2">
               <span className="text-black">Account</span>
-              <UserButton 
-                appearance={{
-                  elements: {
-                    avatarBox: "w-8 h-8",
-                    userButtonPopoverCard: "border border-black",
-                  },
-                }}
-              />
+              <div className="flex items-center">
+                <UserButton 
+                  appearance={{
+                    elements: {
+                      avatarBox: "w-8 h-8",
+                      userButtonPopoverCard: "border border-black",
+                    },
+                  }}
+                />
+              </div>
             </div>
           </div>
         </div>

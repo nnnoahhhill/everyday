@@ -8,7 +8,7 @@ import TodoCalendarView from "./todo-calendar-view";
 type ListType = "today" | "tomorrow" | "this_week" | "this_month" | "bank" | "calendar";
 
 export default function TodoListTab() {
-  const [activeList, setActiveList] = useState<ListType>("bank");
+  const [activeList, setActiveList] = useState<ListType>("today");
 
   return (
     <div className="h-full flex flex-col bg-white">

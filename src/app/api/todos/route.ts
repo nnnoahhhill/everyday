@@ -35,7 +35,14 @@ export async function GET(req: Request) {
 
     const where: any = { userId };
     if (listType) {
-      where.listType = listType;
+      if (listType === "this_week" || listType === "this_month") {
+        // Include today and tomorrow tasks in weekly/monthly views
+        where.listType = {
+          in: [listType, "today", "tomorrow"],
+        };
+      } else {
+        where.listType = listType;
+      }
     }
 
     const todos = await prisma.todo.findMany({

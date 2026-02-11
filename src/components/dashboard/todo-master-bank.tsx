@@ -306,6 +306,46 @@ function TodoItemForm({ onSave, onCancel, initialData }: any) {
     );
   };
 
+  const determineListType = (earliestStart: string | null, latest: string | null): "today" | "tomorrow" | "this_week" | "this_month" | null => {
+    if (!earliestStart && !latest) return null;
+    
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    const weekEnd = new Date(today);
+    weekEnd.setDate(weekEnd.getDate() + 7);
+    const monthEnd = new Date(today);
+    monthEnd.setMonth(monthEnd.getMonth() + 1);
+    
+    // Parse date strings (YYYY-MM-DD format from HTML date input)
+    const parseDateString = (dateStr: string): Date => {
+      const [year, month, day] = dateStr.split('-').map(Number);
+      return new Date(year, month - 1, day);
+    };
+    
+    const startDate = earliestStart ? parseDateString(earliestStart) : null;
+    const endDate = latest ? parseDateString(latest) : null;
+    
+    // Prioritize earliest start if available, otherwise use latest
+    const relevantDate = startDate || endDate;
+    if (!relevantDate) return null;
+    
+    relevantDate.setHours(0, 0, 0, 0);
+    
+    if (relevantDate.getTime() === today.getTime()) {
+      return "today";
+    } else if (relevantDate.getTime() === tomorrow.getTime()) {
+      return "tomorrow";
+    } else if (relevantDate <= weekEnd) {
+      return "this_week";
+    } else if (relevantDate <= monthEnd) {
+      return "this_month";
+    }
+    
+    return null;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
@@ -338,6 +378,23 @@ function TodoItemForm({ onSave, onCancel, initialData }: any) {
           body: JSON.stringify(data),
         });
         if (!res.ok) throw new Error("Failed to create");
+        
+        const createdItem = await res.json();
+        
+        // Auto-place in appropriate list if dates are provided
+        const listType = determineListType(earliestStart, latest);
+        if (listType && createdItem.id) {
+          const doneByDate = latest || earliestStart;
+          await fetch("/api/todos", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              todoItemId: createdItem.id,
+              listType,
+              doneByDate: doneByDate ? new Date(doneByDate).toISOString().split('T')[0] : undefined,
+            }),
+          });
+        }
       }
       onSave();
     } catch (error: any) {

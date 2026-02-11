@@ -79,7 +79,9 @@ export default function TodoListView({ listType }: TodoListViewProps) {
       const res = await fetch(`/api/todos?listType=${listType}`);
       if (res.ok) {
         const data = await res.json();
-        setTodos(data);
+        // Filter out completed todos (they're archived)
+        const activeTodos = data.filter((todo: any) => todo.status !== "completed");
+        setTodos(activeTodos);
       }
     } catch (error) {
       console.error("Failed to fetch todos", error);
